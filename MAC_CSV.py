@@ -43,10 +43,7 @@ for line in lines[1:]:  # Skip the header line
 
     elif cells[3].startswith(("Gi", "Te1", "Te2", "Te3", "Te4")):
         new_cells = [cells[0] + " " + cells[1] + " " + cells[2] ] + cells[3:]
-        # new_cells = [cells[0] + " " + cells[1] + " " + cells[2] + "," + cells[3]  ] + cells[4:]
-    # elif cells[0].find("Gi"):
-    # elif match_Gi_Te: 
-    #        
+  
     elif re.search(r'(Gi|Te)(\d/)', cell[0]): 
         print(cell[0])      
         index_te1 = input_text.find("Te1")
@@ -59,7 +56,6 @@ for line in lines[1:]:  # Skip the header line
         new_cells = cells
     
     # Append the modified cells to the CSV data list
-    # csv_data.append(new_cells)
     print(new_cells)
 
 # Write CSV file
