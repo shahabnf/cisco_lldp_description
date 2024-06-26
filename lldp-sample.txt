@@ -1,0 +1,18 @@
+Test_Switch#show lldp neighbour
+Capability codes:
+    (R) Router, (B) Bridge, (T) Telephone, (C) DOCSIS Cable Device
+    (W) WLAN Access Point, (P) Repeater, (S) Station, (O) Other
+
+Device ID           Local Intf     Hold-time  Capability      Port ID
+IP Phone            Gi2/0/23       120        B,T             f8bb.1234.1234
+IP Phone            Gi2/0/15       120        B,T             f8bb.1234.1234
+IP Phone            Gi2/0/16       120        B,T             f8bb.1234.1234
+IP Phone            Gi1/0/10       120        B,T             f8bb.1234.1234
+AccessPoint_02      Gi4/0/5        120        B               Gi0
+AccessPoint_07      Gi4/0/7        120        B               Gi0
+AccessPoint_06      Gi1/0/17       120        B               Gi0
+AP_05		    Gi1/0/23       120        B               Gi0
+IP Phone            Gi3/0/20       120        B,T             f8bb.1234.1234
+AP_HP	            Gi4/0/10       120        B               Gi0
+AP_New_AP_newVeryNewGi4/0/8        120        B               Gi0
+ANewSwitch.NewSwitchTe1/1/1        120        B,R             Gi3/0/2
