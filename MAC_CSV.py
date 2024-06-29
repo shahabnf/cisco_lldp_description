@@ -21,6 +21,10 @@ def process_matches(matches):
         results.append((match[0].rstrip(), match[1], match[2], match[3], match[4]))
     return results
 
+def sort_by_local_intf(results):
+    """Sorts the results based on the Local Intf field alphabetically."""
+    return sorted(results, key=lambda x: x[1])
+
 def write_to_csv(results, output_file_path):
     """Writes the processed results to a CSV file."""
     with open(output_file_path, 'w', newline='') as csvfile:
@@ -44,8 +48,11 @@ def main():
     # Process matches to strip trailing spaces
     results = process_matches(matches)
     
+    # Sort results by Local Intf alphabetically
+    sorted_results = sort_by_local_intf(results)
+    
     # Write results to a CSV file
-    write_to_csv(results, output_file_path)
+    write_to_csv(sorted_results, output_file_path)
     
     # Print confirmation message
     print(f"Results have been written to ---> {output_file_path}")
