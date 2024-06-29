@@ -1,45 +1,55 @@
-import csv
 import re
+import csv
 import os
 
 
-# Set values
-# Get the current directory
-current_directory = os.getcwd()
-input_file_path = os.path.join(current_directory, 'lldp-sample.txt')
+def read_input_file(file_path):
+    """Reads the input text from the specified file."""
+    with open(file_path, 'r') as file:
+        return file.read()
 
+def find_matches(input_text):
+    """Finds matches in the input text based on the defined pattern."""
+    # Regular expression to match the required patterns, including MAC addresses
+    pattern = re.compile(r'(.*?)(Gi\d/\d/\d+|Te\d/\d/\d+|[0-9a-f]{4}\.[0-9a-f]{4}\.[0-9a-f]{4})\b\s+(\d+)\s+([A-Z,]*)\s+(\S+)')
+    return pattern.findall(input_text)
 
-# Read the input text file
-with open(input_file_path, 'r') as input_file:
-    input_text_lines = input_file.read()
+def process_matches(matches):
+    """Processes the matches to strip trailing spaces from the first part and store them in a list."""
+    results = []
+    for match in matches:
+        results.append((match[0].rstrip(), match[1], match[2], match[3], match[4]))
+    return results
 
+def write_to_csv(results, output_file_path):
+    """Writes the processed results to a CSV file."""
+    with open(output_file_path, 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        # Write header
+        writer.writerow(['Device ID', 'Local Intf', 'Hold-time', 'Capability', 'Port ID'])
+        # Write rows
+        writer.writerows(results)
 
-# Regular expression to match the required patterns, including MAC addresses
-pattern = re.compile(r'(.*?)(Gi\d/\d/\d+|Te\d/\d/\d+|[0-9a-f]{4}\.[0-9a-f]{4}\.[0-9a-f]{4})\b\s+(\d+)\s+([A-Z,]*)\s+(\S+)')
+def main():
+    # Define the input and output file paths
+    input_file_path = os.path.join(os.getcwd(), 'input.txt')
+    output_file_path = os.path.join(os.getcwd(), 'output.csv')
+    
+    # Read the input text from the file
+    input_text = read_input_file(input_file_path)
+    
+    # Find matches for the pattern
+    matches = find_matches(input_text)
+    
+    # Process matches to strip trailing spaces
+    results = process_matches(matches)
+    
+    # Write results to a CSV file
+    write_to_csv(results, output_file_path)
+    
+    # Print confirmation message
+    print(f"Results have been written to ---> {output_file_path}")
 
-# Empty List to store results
-results = []
-
-# Find matches for the pattern
-matches = pattern.findall(input_text_lines)
-
-# Add matches to results list, stripping trailing spaces from the first part
-for match in matches:
-    results.append((match[0].rstrip(), match[1], match[2], match[3], match[4]))
-
-
-# Get the current directory
-current_directory = os.getcwd()
-output_file_path = os.path.join(current_directory, 'output.csv')
-
-
-# Write results to a CSV file
-with open('output.csv', 'w', newline='') as csvfile:
-    writer = csv.writer(csvfile)
-    # Write header
-    writer.writerow(['Device ID', 'Local Intf', 'Hold-time', 'Capability', 'Port ID'])
-    # Write rows
-    writer.writerows(results)
-
-# print("Results have been written to output.csv")
-print(f"Results have been written to ---> {output_file_path}")
+# Execute the main function
+if __name__ == '__main__':
+    main()
