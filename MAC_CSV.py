@@ -14,8 +14,8 @@ with open(input_file_path, 'r') as input_file:
     input_text_lines = input_file.read()
 
 
-# Regular expression to match the required patterns
-pattern = re.compile(r'(.*?)(Gi\d/\d/\d+|Te\d/\d/\d+)\b\s+(\d+)\s+([A-Z,]+)\s+(\S+)')
+# Regular expression to match the required patterns, including MAC addresses
+pattern = re.compile(r'(.*?)(Gi\d/\d/\d+|Te\d/\d/\d+|[0-9a-f]{4}\.[0-9a-f]{4}\.[0-9a-f]{4})\b\s+(\d+)\s+([A-Z,]*)\s+(\S+)')
 
 # Empty List to store results
 results = []
