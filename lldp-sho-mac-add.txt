@@ -1,0 +1,10 @@
+New_Switch#
+New_Switch#show mac add int Gi1/0/23
+          Mac Address Table
+-------------------------------------------
+
+Vlan    Mac Address       Type        Ports
+----    -----------       --------    -----
+  1     34ea.1bda.7777    DYNAMIC     Gi1/0/23
+Total Mac Addresses for this criterion: 1
+New_Switch#
