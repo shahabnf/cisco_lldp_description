@@ -2,6 +2,11 @@ import csv
 import os
 import re
 from collections import defaultdict
+import requests
+
+
+# MAC Address regex pattern
+pattern = re.compile(r'([0-9a-f]{4}\.[0-9a-f]{4}\.[0-9a-f]{4})')
 
 
 def read_csv_file(file_path):
@@ -14,7 +19,6 @@ def read_csv_file(file_path):
 
 def find_mac_address(file_path):
     """Finds the first MAC address matching the pattern in the specified file."""
-    pattern = re.compile(r'([0-9a-f]{4}\.[0-9a-f]{4}\.[0-9a-f]{4})')
     
     with open(file_path, 'r') as file:
         for line in file:
@@ -24,8 +28,36 @@ def find_mac_address(file_path):
     return None
     
 
+def get_mac_vendor_online(mac_address):
+    """Queries the MAC Vendors API to get the vendor for a given MAC address."""
+    url = f"https://api.macvendors.com/{mac_address}"
+    
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            return response.text
+        else:
+            # return "Vendor not found or error occurred."
+            return "NA"
+    except Exception as e:
+        return str(e)
 
-def write_to_new_file(rows, mac_file_path, output_file_path):
+
+def check_mac_in_file(mac_address, file_path):
+    """Checks if the first 7 characters of the given MAC address are in the All-MAC file."""
+    # Normalize the MAC address to the first 7 characters
+    mac_prefix = mac_address[:7].lower()
+
+    with open(file_path, 'r') as file:
+        for line in file:
+            # Remove any whitespace and normalize the line to lowercase
+            prefix = line.strip().lower()
+            if mac_prefix == prefix:
+                return True
+    return False
+
+
+def write_to_new_file(rows, mac_file_path, output_file_path, mac_file_path_finder):
     """Writes the processed rows to a new file."""
     # Dictionary to collect entries by "Local Intf"
     local_intf_dict = defaultdict(list)
@@ -61,18 +93,29 @@ def write_to_new_file(rows, mac_file_path, output_file_path):
                     file.write(f"interface {entries[0][1]}\n")
                     file.write(f"description {entries[0][0]}-{mac_address}\n\n")
 
+            # Find MAC Address via API
+            elif pattern.match(entries[0][0]) and len(entries) == 1 :
+                # print(entries[0][0])
+                mac_address = entries[0][0]
+                if check_mac_in_file(mac_address, mac_file_path_finder):
+                    file.write(f"interface {entries[0][1]}\n")
+                    file.write(f"description WS-{mac_address}\n\n")
+
+
+
 
 def main():
     # Define the input and output file paths
     input_file_path = os.path.join(os.getcwd(), 'output.csv')
     output_file_path = os.path.join(os.getcwd(), 'result.txt')
     mac_file_path = os.path.join(os.getcwd(), 'lldp-sho-mac-add.txt')
+    mac_file_path_finder = os.path.join(os.getcwd(), 'All-MAC.txt')
     
     # Read the CSV file
     rows = read_csv_file(input_file_path)
     
     # Write to the new file
-    write_to_new_file(rows, mac_file_path, output_file_path)
+    write_to_new_file(rows, mac_file_path, output_file_path, mac_file_path_finder)
     
     # Print confirmation message
     print(f"Processed results have been written to ---> {output_file_path}")
