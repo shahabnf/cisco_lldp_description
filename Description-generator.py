@@ -64,7 +64,17 @@ def check_mac_in_file(mac_address, file_path):
     return False
 
 
-def write_to_new_file(rows, mac_file_path, output_file_path, mac_file_path_finder):
+def write_to_csv(results, output_file_path):
+    """Writes the processed results to a CSV file."""
+    with open(output_file_path, 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        # Write header
+        writer.writerow(['Port', 'New Description', 'Old Description'])
+        # Write rows
+        writer.writerows(results)
+
+
+def write_to_new_file(rows, mac_file_path, output_file_path, mac_file_path_finder, output_file_path_description_csv):
     """Writes the processed rows to a new file."""
     # Dictionary to collect entries by "Local Intf"
     local_intf_dict = defaultdict(list)
@@ -72,6 +82,8 @@ def write_to_new_file(rows, mac_file_path, output_file_path, mac_file_path_finde
     # Populate the dictionary
     for row in rows:
         local_intf_dict[row[1]].append(row)
+
+    new_descriptions = []
 
     # Write the processed data to the output file
     with open(output_file_path, 'w') as file:
@@ -82,7 +94,10 @@ def write_to_new_file(rows, mac_file_path, output_file_path, mac_file_path_finde
                 # Single entry with "IP Phone"
                 file.write(f"interface {entries[0][1]}\n")
                 file.write(f"description Phone-{entries[0][4]}\n\n")
-            
+                # Append to csv file
+                new_description = [f"interface {entries[0][1]}", f"description Phone-{entries[0][4]}", ""]
+                new_descriptions.append(new_description)
+
             # Find IP Phone and Workstation on same port
             elif len(entries) == 2:
                 # Two entries with the same "Local Intf"
@@ -92,42 +107,58 @@ def write_to_new_file(rows, mac_file_path, output_file_path, mac_file_path_finde
                     other_entry = entries[1 - device_ids.index("IP Phone")]
                     file.write(f"interface {local_intf}\n")
                     file.write(f"description Phone-{ip_phone_entry[4]}-WS-{other_entry[4]}\n\n")
-            
+                    # Append to csv file
+                    new_description = [f"interface {local_intf}", f"description Phone-{ip_phone_entry[4]}-WS-{other_entry[4]}", ""]
+                    new_descriptions.append(new_description)
+
             # Find Access Point without MAC address 
             elif len(entries) == 1 and "120" in entries[0][2] and "Gi0" in entries[0][4]:
                 mac_address = find_mac_address(mac_file_path)               
                 if mac_address:
                     file.write(f"interface {entries[0][1]}\n")
                     file.write(f"description {entries[0][0]}-{mac_address}\n\n")
+                    # Append to csv file
+                    new_description = [f"interface {entries[0][1]}" , f"description {entries[0][0]}-{mac_address}", ""]
+                    new_descriptions.append(new_description)
 
             # Find computer name with MAC address 
             elif len(entries) == 1 and "3601" in entries[0][2] and entries[0][0] != entries[0][4]:
                     file.write(f"interface {entries[0][1]}\n")
                     file.write(f"description {entries[0][0]}-{entries[0][4]}\n\n")
-
+                    # Append to csv file
+                    new_description = [f"interface {entries[0][1]}", f"description {entries[0][0]}-{entries[0][4]}", ""]
+                    new_descriptions.append(new_description)
 
             # Find MAC Address 
             elif pattern.match(entries[0][0]) and len(entries) == 1 :
-                # print(entries[0][0])
                 mac_address = entries[0][0]
 
                 # Offline MAC Address finder from file
                 if check_mac_in_file(mac_address, mac_file_path_finder):
                     file.write(f"interface {entries[0][1]}\n")
                     file.write(f"description WS-{mac_address}\n\n")
+                    # Append to csv file
+                    new_description = [f"interface {entries[0][1]}", f"description WS-{mac_address}", ""]
+                    new_descriptions.append(new_description)
 
                 # Online MAC Address finder via API
                 elif (vendor := get_mac_vendor_online(mac_address)) is not False:
                     if any(item in vendor for item in vendor_list):
                         file.write(f"interface {entries[0][1]}\n")
                         file.write(f"description WS-{mac_address}\n\n")
+                        # Append to csv file
+                        new_description = [f"interface {entries[0][1]}", f"description WS-{mac_address}", ""]
+                        new_descriptions.append(new_description)
+                        # Append to All-MAC.txt offline MAC address search
                         mac_prefix = mac_address[:7].lower()
                         append_to_file(mac_file_path_finder, mac_prefix)
-                    print(f"The MAC address {mac_address} from vendor {vendor} was added to '{mac_file_path_finder}' file for future reference as Workstation.\n")
+                    print(f"The MAC address {mac_address} from vendor {vendor} was added to '{mac_file_path_finder}' \
+                        file for future reference as Workstation.\n")
                 
                 else:
                     print(f"The MAC address {mac_address} on {entries[0][1]} could not be found. Try other methods to find the vendor.\n")
 
+            write_to_csv(new_descriptions, output_file_path_description_csv)
 
 
 def main():
@@ -136,12 +167,13 @@ def main():
     output_file_path = os.path.join(os.getcwd(), 'result.txt')
     mac_file_path = os.path.join(os.getcwd(), 'lldp-sho-mac-add.txt')
     mac_file_path_finder = os.path.join(os.getcwd(), 'All-MAC.txt')
+    output_file_path_description_csv = os.path.join(os.getcwd(), 'description-comparison.csv')
     
     # Read the CSV file
     rows = read_csv_file(input_file_path)
     
     # Write to the new file
-    write_to_new_file(rows, mac_file_path, output_file_path, mac_file_path_finder)
+    write_to_new_file(rows, mac_file_path, output_file_path, mac_file_path_finder, output_file_path_description_csv)
     
     # Print confirmation message
     print(f"Processed results have been written to ---> {output_file_path}")
