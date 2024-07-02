@@ -8,6 +8,9 @@ import requests
 # MAC Address regex pattern
 pattern = re.compile(r'([0-9a-f]{4}\.[0-9a-f]{4}\.[0-9a-f]{4})')
 
+# Vendors list as workstation
+vendor_list = ["HP", "Dell", "Hewlett-Packard", "Hewlett Packard", 'Intel']
+
 
 def read_csv_file(file_path):
     """Reads the CSV file and returns the rows."""
@@ -17,9 +20,14 @@ def read_csv_file(file_path):
         return [row for row in reader]
 
 
+def append_to_file(file_path, text):
+    """Appends the given text to the end of the specified file."""
+    with open(file_path, 'a') as file:
+        file.write(text + '\n')
+
+
 def find_mac_address(file_path):
     """Finds the first MAC address matching the pattern in the specified file."""
-    
     with open(file_path, 'r') as file:
         for line in file:
             match = pattern.search(line)
@@ -37,8 +45,7 @@ def get_mac_vendor_online(mac_address):
         if response.status_code == 200:
             return response.text
         else:
-            # return "Vendor not found or error occurred."
-            return "NA"
+            return False
     except Exception as e:
         return str(e)
 
@@ -93,14 +100,27 @@ def write_to_new_file(rows, mac_file_path, output_file_path, mac_file_path_finde
                     file.write(f"interface {entries[0][1]}\n")
                     file.write(f"description {entries[0][0]}-{mac_address}\n\n")
 
-            # Find MAC Address via API
+            # Find MAC Address 
             elif pattern.match(entries[0][0]) and len(entries) == 1 :
                 # print(entries[0][0])
                 mac_address = entries[0][0]
+
+                # Offline MAC Address finder from file
                 if check_mac_in_file(mac_address, mac_file_path_finder):
                     file.write(f"interface {entries[0][1]}\n")
                     file.write(f"description WS-{mac_address}\n\n")
 
+                # Online MAC Address finder via API
+                elif (vendor := get_mac_vendor_online(mac_address)) is not False:
+                    if any(item in vendor for item in vendor_list):
+                        file.write(f"interface {entries[0][1]}\n")
+                        file.write(f"description WS-{mac_address}\n\n")
+                        mac_prefix = mac_address[:7].lower()
+                        append_to_file(mac_file_path_finder, mac_prefix)
+                    print(f"The MAC address {mac_address} from vendor {vendor} was added to '{mac_file_path_finder}' file for future reference as Workstation.\n")
+                
+                else:
+                    print(f"The MAC address {mac_address} on {entries[0][1]} could not be found. Try other methods to find the vendor.\n")
 
 
 
