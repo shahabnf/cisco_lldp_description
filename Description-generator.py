@@ -11,6 +11,7 @@ pattern = re.compile(r'([0-9a-f]{4}\.[0-9a-f]{4}\.[0-9a-f]{4})')
 # Vendors list as workstation
 vendor_list = ["HP", "Dell", "Hewlett-Packard", "Hewlett Packard", 'Intel']
 
+Tengig_start = True
 
 def read_csv_file(file_path):
     """Reads the CSV file and returns the rows."""
@@ -74,7 +75,7 @@ def write_to_csv(results, output_file_path):
         writer.writerows(results)
 
 
-def write_to_new_file(rows, mac_file_path, output_file_path, mac_file_path_finder, output_file_path_description_csv):
+def write_to_new_file(rows, mac_file_path, output_file_path, mac_file_path_finder, output_file_path_description_csv, Tengig_start):
     """Writes the processed rows to a new file."""
     # Dictionary to collect entries by "Local Intf"
     local_intf_dict = defaultdict(list)
@@ -99,16 +100,11 @@ def write_to_new_file(rows, mac_file_path, output_file_path, mac_file_path_finde
                 new_descriptions.append(new_description)
 
             # Find IP Phone and Workstation on same port
-            elif len(entries) == 2:
-                # Two entries with the same "Local Intf"
-                device_ids = [entry[0] for entry in entries]
-                if "IP Phone" in device_ids:
-                    ip_phone_entry = entries[device_ids.index("IP Phone")]
-                    other_entry = entries[1 - device_ids.index("IP Phone")]
+            elif len(entries) == 2 and "120" in entries[0][2] and "3601" in entries[1][2] and "B,T" in entries[0][3] :
                     file.write(f"interface {local_intf}\n")
-                    file.write(f"description Phone-{ip_phone_entry[4]}-WS-{other_entry[4]}\n\n")
+                    file.write(f"description Phone-{entries[0][4]}-WS-{entries[1][4]}\n\n")
                     # Append to csv file
-                    new_description = [f"interface {local_intf}", f"description Phone-{ip_phone_entry[4]}-WS-{other_entry[4]}", ""]
+                    new_description = [f"interface {local_intf}", f"description Phone-{entries[0][4]}-WS-{entries[1][4]}", ""]
                     new_descriptions.append(new_description)
 
             # Find Access Point without MAC address 
@@ -152,11 +148,21 @@ def write_to_new_file(rows, mac_file_path, output_file_path, mac_file_path_finde
                         # Append to All-MAC.txt offline MAC address search
                         mac_prefix = mac_address[:7].lower()
                         append_to_file(mac_file_path_finder, mac_prefix)
-                    print(f"The MAC address {mac_address} from vendor {vendor} was added to '{mac_file_path_finder}' \
-                        file for future reference as Workstation.\n")
+                    print(f"The MAC address {mac_address} from vendor {vendor} was added to '{mac_file_path_finder}' "
+                        "file for future reference as Workstation.\n")
                 
                 else:
                     print(f"The MAC address {mac_address} on {entries[0][1]} could not be found. Try other methods to find the vendor.\n")
+            
+            elif len(entries) == 1 and "B,R" in entries[0][3] :
+                if Tengig_start: file.write("\n"); new_descriptions.append(["","",""]); Tengig_start = False
+                # Remove all chars after dot
+                device_name = entries[0][0].split('.')[0]
+                file.write(f"interface {entries[0][1]}\n")
+                file.write(f"description Connected to {device_name} port {entries[0][4]}\n\n")
+                # Append to csv file
+                new_description = [f"interface {entries[0][1]}", f"description Connected to {device_name} port {entries[0][4]}", ""]
+                new_descriptions.append(new_description)
 
             write_to_csv(new_descriptions, output_file_path_description_csv)
 
@@ -173,7 +179,7 @@ def main():
     rows = read_csv_file(input_file_path)
     
     # Write to the new file
-    write_to_new_file(rows, mac_file_path, output_file_path, mac_file_path_finder, output_file_path_description_csv)
+    write_to_new_file(rows, mac_file_path, output_file_path, mac_file_path_finder, output_file_path_description_csv, Tengig_start)
     
     # Print confirmation message
     print(f"Processed results have been written to ---> {output_file_path}")
