@@ -62,6 +62,9 @@ Device ID           Local Intf     Hold-time  Capability      Port ID
 38ca.84c4.1111      Gi3/0/38       3601                       38ca.84c4.1111
 
 Device ID           Local Intf     Hold-time  Capability      Port ID
+0011.8512.1234	    Gi4/0/30       3601                       0011.8512.1234
+000e.3512.4321	    Gi4/0/31       3601                       000e.3512.4321
+PC12345-12          Gi4/0/35       3601                       38ca.84dd.6789
 38ca.84c4.2222      Gi4/0/36       3601                       38ca.84c4.2222
 38ca.84c4.2222      Gi3/0/46       3601                       38ca.84c4.2222
 38ca.84c4.2222      Gi3/0/44       3601                       38ca.84c4.2222
