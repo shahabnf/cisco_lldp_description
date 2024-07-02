@@ -100,6 +100,12 @@ def write_to_new_file(rows, mac_file_path, output_file_path, mac_file_path_finde
                     file.write(f"interface {entries[0][1]}\n")
                     file.write(f"description {entries[0][0]}-{mac_address}\n\n")
 
+            # Find computer name with MAC address 
+            elif len(entries) == 1 and "3601" in entries[0][2] and entries[0][0] != entries[0][4]:
+                    file.write(f"interface {entries[0][1]}\n")
+                    file.write(f"description {entries[0][0]}-{entries[0][4]}\n\n")
+
+
             # Find MAC Address 
             elif pattern.match(entries[0][0]) and len(entries) == 1 :
                 # print(entries[0][0])
