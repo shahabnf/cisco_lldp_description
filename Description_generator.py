@@ -3,6 +3,7 @@ import os
 import re
 from collections import defaultdict
 import requests
+import Connection_ssh_lldp_txt_v2 
 
 
 # MAC Address regex pattern
@@ -26,16 +27,6 @@ def append_to_file(file_path, text):
     with open(file_path, 'a') as file:
         file.write(text + '\n')
 
-
-def find_mac_address(file_path):
-    """Finds the first MAC address matching the pattern in the specified file."""
-    with open(file_path, 'r') as file:
-        for line in file:
-            match = pattern.search(line)
-            if match:
-                return match.group(1)
-    return None
-    
 
 def get_mac_vendor_online(mac_address):
     """Queries the MAC Vendors API to get the vendor for a given MAC address."""
@@ -91,7 +82,7 @@ def write_to_new_file(rows, mac_file_path, output_file_path, mac_file_path_finde
         for local_intf, entries in local_intf_dict.items():
             
             # Find signle IP Phone on the port
-            if len(entries) == 1 and "IP Phone" in entries[0][0]:
+            if len(entries) == 1 and "NEC IP Phone" in entries[0][0]:
                 # Single entry with "IP Phone"
                 file.write(f"interface {entries[0][1]}\n")
                 file.write(f"description Phone-{entries[0][4]}\n\n")
@@ -101,15 +92,15 @@ def write_to_new_file(rows, mac_file_path, output_file_path, mac_file_path_finde
 
             # Find IP Phone and Workstation on same port
             elif len(entries) == 2 and "120" in entries[0][2] and "3601" in entries[1][2] and "B,T" in entries[0][3] :
-                    file.write(f"interface {local_intf}\n")
-                    file.write(f"description Phone-{entries[0][4]}-WS-{entries[1][4]}\n\n")
-                    # Append to csv file
-                    new_description = [f"interface {local_intf}", f"description Phone-{entries[0][4]}-WS-{entries[1][4]}", ""]
-                    new_descriptions.append(new_description)
+                file.write(f"interface {local_intf}\n")
+                file.write(f"description Phone-{entries[0][4]}-WS-{entries[1][4]}\n\n")
+                # Append to csv file
+                new_description = [f"interface {local_intf}", f"description Phone-{entries[0][4]}-WS-{entries[1][4]}", ""]
+                new_descriptions.append(new_description)
 
-            # Find Access Point without MAC address 
+            # Find Access Point without MAC address
             elif len(entries) == 1 and "120" in entries[0][2] and "Gi0" in entries[0][4]:
-                mac_address = find_mac_address(mac_file_path)               
+                mac_address = Connection_ssh_lldp_txt_v2.find_mac_address(entries[0][1])               
                 if mac_address:
                     file.write(f"interface {entries[0][1]}\n")
                     file.write(f"description {entries[0][0]}-{mac_address}\n\n")
@@ -119,11 +110,19 @@ def write_to_new_file(rows, mac_file_path, output_file_path, mac_file_path_finde
 
             # Find computer name with MAC address 
             elif len(entries) == 1 and "3601" in entries[0][2] and entries[0][0] != entries[0][4]:
-                    file.write(f"interface {entries[0][1]}\n")
-                    file.write(f"description {entries[0][0]}-{entries[0][4]}\n\n")
-                    # Append to csv file
-                    new_description = [f"interface {entries[0][1]}", f"description {entries[0][0]}-{entries[0][4]}", ""]
-                    new_descriptions.append(new_description)
+                file.write(f"interface {entries[0][1]}\n")
+                file.write(f"description {entries[0][0]}-{entries[0][4]}\n\n")
+                # Append to csv file
+                new_description = [f"interface {entries[0][1]}", f"description {entries[0][0]}-{entries[0][4]}", ""]
+                new_descriptions.append(new_description)
+
+            # Find Camera
+            elif "120" in entries[0][2] and "S" in entries[0][3]:
+                file.write(f"interface {entries[0][1]}\n")
+                file.write(f"description Camera-{entries[0][4]}\n\n")
+                # Append to csv file
+                new_description = [f"interface {entries[0][1]}", f"description Camera-{entries[0][4]}", ""]
+                new_descriptions.append(new_description)
 
             # Find MAC Address 
             elif pattern.match(entries[0][0]) and len(entries) == 1 :
@@ -148,9 +147,10 @@ def write_to_new_file(rows, mac_file_path, output_file_path, mac_file_path_finde
                         # Append to All-MAC.txt offline MAC address search
                         mac_prefix = mac_address[:7].lower()
                         append_to_file(mac_file_path_finder, mac_prefix)
-                    print(f"The MAC address {mac_address} from vendor {vendor} was added to '{mac_file_path_finder}' "
+                        print(f"The MAC address {mac_address} from vendor {vendor} was added to '{mac_file_path_finder}' "
                         "file for future reference as Workstation.\n")
-                
+                    else:
+                        print(f"NOTE: The MAC address {mac_address} from vendor {vendor} port {entries[0][1]} is new vendor. \n")
                 else:
                     print(f"The MAC address {mac_address} on {entries[0][1]} could not be found. Try other methods to find the vendor.\n")
             
@@ -159,9 +159,9 @@ def write_to_new_file(rows, mac_file_path, output_file_path, mac_file_path_finde
                 # Remove all chars after dot
                 device_name = entries[0][0].split('.')[0]
                 file.write(f"interface {entries[0][1]}\n")
-                file.write(f"description Connected to {device_name} port {entries[0][4]}\n\n")
+                file.write(f"description Uplink to {device_name} port {entries[0][4]}\n\n")
                 # Append to csv file
-                new_description = [f"interface {entries[0][1]}", f"description Connected to {device_name} port {entries[0][4]}", ""]
+                new_description = [f"interface {entries[0][1]}", f"description Uplink to {device_name} port {entries[0][4]}", ""]
                 new_descriptions.append(new_description)
 
             write_to_csv(new_descriptions, output_file_path_description_csv)
@@ -169,11 +169,12 @@ def write_to_new_file(rows, mac_file_path, output_file_path, mac_file_path_finde
 
 def main():
     # Define the input and output file paths
-    input_file_path = os.path.join(os.getcwd(), 'output.csv')
-    output_file_path = os.path.join(os.getcwd(), 'result.txt')
+    input_file_path = os.path.join(os.getcwd(), 'output-lldp-compiled.csv')
+    # output_file_path = os.path.join(os.getcwd(), 'result.txt')
+    output_file_path = os.path.join(os.getcwd(), 'output_description_commands_for_switch.txt')
     mac_file_path = os.path.join(os.getcwd(), 'lldp-sho-mac-add.txt')
     mac_file_path_finder = os.path.join(os.getcwd(), 'All-MAC.txt')
-    output_file_path_description_csv = os.path.join(os.getcwd(), 'description-comparison.csv')
+    output_file_path_description_csv = os.path.join(os.getcwd(), 'output_description-comparison.csv')
     
     # Read the CSV file
     rows = read_csv_file(input_file_path)
