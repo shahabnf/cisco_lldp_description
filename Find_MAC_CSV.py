@@ -10,8 +10,11 @@ def read_input_file(file_path):
 
 def find_matches(input_text):
     """Finds matches in the input text based on the defined pattern."""
-    # Regular expression to match the required patterns, including MAC addresses
+    # Regular expression to match the required patterns, including MAC addresses (New pattern Gi1/0/1)
     pattern = re.compile(r'(.*?)(Gi\d/\d/\d+|Te\d/\d/\d+|[0-9a-f]{4}\.[0-9a-f]{4}\.[0-9a-f]{4})\b\s+(\d+)\s+([A-Z,]*)\s+(\S+)')
+    # Old pattern (Gi1/1)
+    if pattern.findall(input_text) == []:
+        pattern = re.compile(r'(.*?)(Gi\d/\d+|Te\d/\d+|[0-9a-f]{4}\.[0-9a-f]{4}\.[0-9a-f]{4})\b\s+(\d+)\s+([A-Z,]*)\s+(\S+)')
     return pattern.findall(input_text)
 
 def process_matches(matches):
@@ -36,8 +39,8 @@ def write_to_csv(results, output_file_path):
 
 def main():
     # Define the input and output file paths
-    input_file_path = os.path.join(os.getcwd(), 'input.txt')
-    output_file_path = os.path.join(os.getcwd(), 'output.csv')
+    input_file_path = os.path.join(os.getcwd(), 'output-lldp.txt')
+    output_file_path = os.path.join(os.getcwd(), 'output-lldp-compiled.csv')
     
     # Read the input text from the file
     input_text = read_input_file(input_file_path)
