@@ -10,9 +10,9 @@ def read_input_file(file_path):
 
 def find_matches(input_text):
     """Finds matches in the input text based on the defined pattern."""
-    # Regular expression to match the required patterns, including MAC addresses (New pattern Gi1/0/1)
+    # Regular expression to match the required patterns, including MAC addresses (New Cisco interface pattern Gi1/0/1)
     pattern = re.compile(r'(.*?)(Gi\d/\d/\d+|Te\d/\d/\d+|[0-9a-f]{4}\.[0-9a-f]{4}\.[0-9a-f]{4})\b\s+(\d+)\s+([A-Z,]*)\s+(\S+)')
-    # Old pattern (Gi1/1)
+    # Old Cisco interface pattern (Gi1/1)
     if pattern.findall(input_text) == []:
         pattern = re.compile(r'(.*?)(Gi\d/\d+|Te\d/\d+|[0-9a-f]{4}\.[0-9a-f]{4}\.[0-9a-f]{4})\b\s+(\d+)\s+([A-Z,]*)\s+(\S+)')
     return pattern.findall(input_text)

@@ -2,8 +2,6 @@ import paramiko
 import getpass
 import re
 import csv
-# import Find_MAC_CSV
-# import Description_generator
 
 
 ip = None
@@ -14,16 +12,12 @@ password = None
 # Find ports regex
 pattern_interface = re.compile(r'Gi[^\s]*\s', re.MULTILINE)
 pattern_mac = pattern = re.compile(r'([0-9a-f]{4}\.[0-9a-f]{4}\.[0-9a-f]{4})\s+DYNAMIC\s+(Gi[^\s]*)', re.IGNORECASE)
-# pattern_mac = re.compile(r'(.*?)([0-9a-f]{4}\.[0-9a-f]{4}\.[0-9a-f]{4})\b\s', re.MULTILINE)
-# pattern_mac = re.compile(r'([0-9a-f]{4}\.[0-9a-f]{4}\.[0-9a-f]{4})', re.IGNORECASE)
-# pattern_mac = pattern = re.compile(r'([0-9a-f]{4}\.[0-9a-f]{4}\.[0-9a-f]{4})\s+DYNAMIC\s+(Gi\d+/\d+)', re.IGNORECASE)
 
 
 
-# commands = [("show lldp neighbors", "lldp"),("show power inline | inc 7.0|15.4","power-inline")]
+# Commands list
 command1, filename1 = "show lldp neighbors", "lldp"
 command2, filename2 = "show power inline | inc 7.0|15.4",""
-# command3, filename3 = "show mac address interface ", "power-mac"
 command3, filename3 = "show mac address interface ", ""
 
 def read_input_file(file_path):
@@ -57,20 +51,15 @@ def find_mac_address(interface):
     filename=""
     output = connect_to_switch_and_run_command(ip, username, password, command, filename, pattern_mac)
     mac = find_matches_mac(pattern_mac, output)
-    # print("Found this tuple",mac, "found this MAC", mac[0][0])
     return mac[0][0]
 
 def get_switch_details():
     """Prompt the user for switch connection details."""
-    # ip = "10.16.2.19"
-    # ip = "10.13.2.16"
     global ip
     global username
     global password
-    ip = "10.13.2.1"
-    username = "eb88"
-    # ip = input("Enter switch IP: ")
-    # username = input("Enter username: ")
+    ip = input("Enter switch IP: ")
+    username = input("Enter username: ")
     password = getpass.getpass("Enter password: ")
     return ip, username, password
 
@@ -118,7 +107,6 @@ def add_mac_to_lldp_output_text(input_tuples, inputfile):
     output_lines = []
     
     for mac, intf in input_tuples:
-        
         # Format the line according to the specified pattern
         line = f"axis-{mac}\t{intf}\t   120\t\tS\t\t{mac}"
         output_lines.append(line)
@@ -133,10 +121,10 @@ def main():
     
     ip, username, password = get_switch_details()
     
-    # connect to switch and run the Show lldp neighbours
+    # Connect to switch and run the show lldp neighbours
     connect_to_switch_and_run_command(ip, username, password, command1, filename1, pattern_interface)
     
-    # find the result of show power inline command 
+    # Connect to switch and run the show power inline  
     ports = connect_to_switch_and_run_command(ip, username, password, command2, filename2, pattern_interface)
     
     # if the result of power inline was not empty
@@ -144,13 +132,8 @@ def main():
         mac_int = ""
         for port in ports:
             command = command3 + port 
-            # print(command)
             mac_int += connect_to_switch_and_run_command(ip, username, password, command , filename3, pattern_mac)
         
-        
-        # read file -> find mac -> print mac
-        # mac_filename_content = read_input_file(f"output-{filename3}.txt")
-        # mac_matches = find_matches_mac(pattern_mac, mac_filename_content)
         
         # Read the output of command 3 and find all the maches in text
         mac_matches = []
@@ -159,8 +142,6 @@ def main():
         # Add the result of MACs and ports to the text file 
         add_mac_to_lldp_output_text(mac_matches,(f"output-{filename1}.txt"))
 
-    # Find_MAC_CSV.main()
-    # Description_generator.main()
 
 
 if __name__ == "__main__":

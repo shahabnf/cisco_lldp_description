@@ -5,6 +5,7 @@ from collections import defaultdict
 import requests
 import Connection_ssh_lldp_txt_v2 
 
+
 # MAC Address regex pattern
 pattern = re.compile(r'([0-9a-f]{4}\.[0-9a-f]{4}\.[0-9a-f]{4})')
 
@@ -25,7 +26,6 @@ def append_to_file(file_path, text):
     """Appends the given text to the end of the specified file."""
     with open(file_path, 'a') as file:
         file.write(text + '\n')
-
 
 
 def get_mac_vendor_online(mac_address):
@@ -98,7 +98,7 @@ def write_to_new_file(rows, mac_file_path, output_file_path, mac_file_path_finde
                 new_description = [f"interface {local_intf}", f"description Phone-{entries[0][4]}-WS-{entries[1][4]}", ""]
                 new_descriptions.append(new_description)
 
-            # Find Access Point without MAC address - NEEDS WORK *****************************
+            # Find Access Point without MAC address
             elif len(entries) == 1 and "120" in entries[0][2] and "Gi0" in entries[0][4]:
                 mac_address = Connection_ssh_lldp_txt_v2.find_mac_address(entries[0][1])               
                 if mac_address:
