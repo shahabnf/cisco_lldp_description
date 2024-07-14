@@ -30,7 +30,7 @@ def find_matches_interface(pattern, input_text):
     """Finds matches in the input text based on the defined pattern."""
     matches = pattern.findall(input_text)
     cleaned_matches = [match.strip() for match in matches]
-    print("Found MAC pattern in these ports",cleaned_matches)
+    print("Found CCTV camera(s) with 'show power inline' command in these port(s):",cleaned_matches)
     return cleaned_matches
 
 
