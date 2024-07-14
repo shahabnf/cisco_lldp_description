@@ -183,7 +183,7 @@ def main():
     write_to_new_file(rows, mac_file_path, output_file_path, mac_file_path_finder, output_file_path_description_csv, Tengig_start)
     
     # Print confirmation message
-    print(f"Processed results have been written to ---> {output_file_path}")
+    print(f"Processed results have been written to ---> {output_file_path}\n")
 
 # Execute the main function
 if __name__ == '__main__':
