@@ -12,6 +12,7 @@ pattern = re.compile(r'([0-9a-f]{4}\.[0-9a-f]{4}\.[0-9a-f]{4})')
 # Vendors list as workstation
 vendor_list = ["HP", "Dell", "Hewlett-Packard", "Hewlett Packard", 'Intel']
 
+
 Tengig_start = True
 
 def read_csv_file(file_path):
@@ -66,7 +67,7 @@ def write_to_csv(results, output_file_path):
         writer.writerows(results)
 
 
-def write_to_new_file(rows, mac_file_path, output_file_path, mac_file_path_finder, output_file_path_description_csv, Tengig_start):
+def write_to_new_file(rows, output_file_path, mac_file_path_finder, output_file_path_description_csv, Tengig_start):
     """Writes the processed rows to a new file."""
     # Dictionary to collect entries by "Local Intf"
     local_intf_dict = defaultdict(list)
@@ -116,12 +117,12 @@ def write_to_new_file(rows, mac_file_path, output_file_path, mac_file_path_finde
                 new_description = [f"interface {entries[0][1]}", f"description {entries[0][0]}-{entries[0][4]}", ""]
                 new_descriptions.append(new_description)
 
-            # Find Camera
+            # Find any other devices 
             elif "120" in entries[0][2] and "S" in entries[0][3]:
                 file.write(f"interface {entries[0][1]}\n")
-                file.write(f"description Camera-{entries[0][4]}\n\n")
+                file.write(f"description {entries[0][0]}\n\n")
                 # Append to csv file
-                new_description = [f"interface {entries[0][1]}", f"description Camera-{entries[0][4]}", ""]
+                new_description = [f"interface {entries[0][1]}", f"description {entries[0][0]}", ""]
                 new_descriptions.append(new_description)
 
             # Find MAC Address 
@@ -150,11 +151,11 @@ def write_to_new_file(rows, mac_file_path, output_file_path, mac_file_path_finde
                         print(f"The MAC address {mac_address} from vendor {vendor} was added to '{mac_file_path_finder}' "
                         "file for future reference as Workstation.\n")
                     else:
-                        print(f"NOTE: The MAC address {mac_address} from vendor {vendor} port {entries[0][1]} is new vendor. \n")
+                        print(f"NOTE: The MAC address {mac_address} from vendor {vendor} port {entries[0][1]} is new vendor.")
                 else:
                     print(f"The MAC address {mac_address} on {entries[0][1]} could not be found. Try other methods to find the vendor.\n")
             
-            elif len(entries) == 1 and "B,R" in entries[0][3] :
+            elif len(entries) == 1 and "B,R" or "B" in entries[0][3]:
                 if Tengig_start: file.write("\n"); new_descriptions.append(["","",""]); Tengig_start = False
                 # Remove all chars after dot
                 device_name = entries[0][0].split('.')[0]
@@ -170,9 +171,7 @@ def write_to_new_file(rows, mac_file_path, output_file_path, mac_file_path_finde
 def main():
     # Define the input and output file paths
     input_file_path = os.path.join(os.getcwd(), 'output-lldp-compiled.csv')
-    # output_file_path = os.path.join(os.getcwd(), 'result.txt')
     output_file_path = os.path.join(os.getcwd(), 'output_description_commands_for_switch.txt')
-    mac_file_path = os.path.join(os.getcwd(), 'lldp-sho-mac-add.txt')
     mac_file_path_finder = os.path.join(os.getcwd(), 'All-MAC.txt')
     output_file_path_description_csv = os.path.join(os.getcwd(), 'output_description-comparison.csv')
     
@@ -180,7 +179,7 @@ def main():
     rows = read_csv_file(input_file_path)
     
     # Write to the new file
-    write_to_new_file(rows, mac_file_path, output_file_path, mac_file_path_finder, output_file_path_description_csv, Tengig_start)
+    write_to_new_file(rows, output_file_path, mac_file_path_finder, output_file_path_description_csv, Tengig_start)
     
     # Print confirmation message
     print(f"Processed results have been written to ---> {output_file_path}\n")

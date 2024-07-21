@@ -1,7 +1,8 @@
 import paramiko
 import getpass
 import re
-import csv
+import requests
+import time
 
 
 ip = None
@@ -13,12 +14,30 @@ password = None
 pattern_interface = re.compile(r'Gi[^\s]*\s', re.MULTILINE)
 pattern_mac = pattern = re.compile(r'([0-9a-f]{4}\.[0-9a-f]{4}\.[0-9a-f]{4})\s+DYNAMIC\s+(Gi[^\s]*)', re.IGNORECASE)
 
-
+# list of other devices in environment (add here if you found new device)
+other_vendor_list = ["epson", "d-link", "xerox", "axis", "microchip", "hewlett packard"]
 
 # Commands list
 command1, filename1 = "show lldp neighbors", "lldp"
 command2, filename2 = "show power inline | inc 7.0|15.4",""
 command3, filename3 = "show mac address interface ", ""
+
+
+def get_mac_vendor_online(mac_address):
+    """Queries the MAC Vendors API to get the vendor for a given MAC address."""
+    url = f"https://api.macvendors.com/{mac_address}"
+    
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            time.sleep(1)
+            return response.text
+        else:
+            time.sleep(1)
+            return False
+    except Exception as e:
+        return str(e)
+
 
 def read_input_file(file_path):
     """Reads the input text from the specified file."""
@@ -30,14 +49,13 @@ def find_matches_interface(pattern, input_text):
     """Finds matches in the input text based on the defined pattern."""
     matches = pattern.findall(input_text)
     cleaned_matches = [match.strip() for match in matches]
-    print("Found CCTV camera(s) with 'show power inline' command in these port(s):",cleaned_matches)
+    print("Found CCTV camera(s) with 'show power inline' command on these port(s):", cleaned_matches)
     return cleaned_matches
 
 
 def find_matches_mac(pattern, input_text):
     """Finds matches in the input text based on the defined pattern."""
     matches = pattern.findall(input_text)
-    
     if type(matches[0]) == tuple:
         cleaned_matches = [(mac.strip(), intf.strip()) for mac, intf in matches]
     else:
@@ -45,13 +63,30 @@ def find_matches_mac(pattern, input_text):
 
     return cleaned_matches
 
+
 def find_mac_address(interface):
     command = f"show mac add int {interface}"
-    # ip, username, password = get_switch_details()
     filename=""
     output = connect_to_switch_and_run_command(ip, username, password, command, filename, pattern_mac)
     mac = find_matches_mac(pattern_mac, output)
     return mac[0][0]
+
+
+def find_mac_missing_intf(interface):
+    command = f"show mac add int {interface}"
+    filename=""
+    output = connect_to_switch_and_run_command(ip, username, password, command, filename, pattern_mac)
+    match = pattern.findall(output)
+    cleaned_match = [(mac.strip(), intf.strip()) for mac, intf in match]
+    
+    return cleaned_match
+
+
+def run_ssh_command(command):
+    filename=""
+    output = connect_to_switch_and_run_command(ip, username, password, command, filename, pattern_mac)
+    return output
+
 
 def get_switch_details():
     """Prompt the user for switch connection details."""
@@ -82,7 +117,7 @@ def connect_to_switch_and_run_command(ip, username, password, command, filename,
             # Save the output of command 1 to a file
             with open(f"output-{filename}.txt", "a") as file:
                 file.write(output)
-            print(f"The outputs have been saved to output-{filename}.txt")
+            print(f"\nThe outputs have been saved to  ---> output-{filename}.txt")
         elif pattern == pattern_mac:
             return output
         else:
@@ -90,7 +125,6 @@ def connect_to_switch_and_run_command(ip, username, password, command, filename,
             matches = find_matches_interface(pattern, output)
             return matches
 
-        
     except paramiko.AuthenticationException:
         print("Authentication failed. Please check your credentials.")
     
@@ -105,11 +139,18 @@ def connect_to_switch_and_run_command(ip, username, password, command, filename,
 def add_mac_to_lldp_output_text(input_tuples, inputfile):
 
     output_lines = []
-    
+    item = ""
+
     for mac, intf in input_tuples:
         # Format the line according to the specified pattern
-        line = f"axis-{mac}\t{intf}\t   120\t\tS\t\t{mac}"
-        output_lines.append(line)
+        if (vendor := get_mac_vendor_online(mac)) is not False:
+            vendor = vendor.lower()
+            for item in other_vendor_list:
+                if item in vendor:
+                    if item == "hewlett packard":
+                        item = "WS"
+                    line = f"{item}-{mac}\t{intf}\t   120\t\tS\t\t{mac}"
+                    output_lines.append(line)
 
     # Append the formatted lines to the file
     with open(inputfile, 'a') as file:
@@ -134,14 +175,12 @@ def main():
             command = command3 + port 
             mac_int += connect_to_switch_and_run_command(ip, username, password, command , filename3, pattern_mac)
         
-        
         # Read the output of command 3 and find all the maches in text
         mac_matches = []
         mac_matches = find_matches_mac(pattern_mac, mac_int)
     
         # Add the result of MACs and ports to the text file 
         add_mac_to_lldp_output_text(mac_matches,(f"output-{filename1}.txt"))
-
 
 
 if __name__ == "__main__":
