@@ -6,11 +6,13 @@ The result/output of "show lldp neighbors" will be sorted alphabetically by Giga
 
 The "show power inline" command will find the CCTV camera(s) connected to the switch and the result will be added to the end of the csv file.
 
-Next, the script perform "show interfaces status" and find all the connected interfaces and compare it with the result of lldp command, if there is a missing interface(s) the interface and MAC address will be added to output text file.
+Next, the script performs "show interfaces status" and find all the connected interfaces and compare it with the result of lldp command, if there is a missing interface(s) the interface and MAC address will be added to output text file.
 
 Then, the script will create a description for each connected interface to assist network admins with adding descriptions to interfaces.
 
 At the end of the script, all the output-generated files will be moved to the "output" directory for easier access.
+
+The final stage is to fetch the existing descriptions for the connected ports and add it to csv file for easier comparison between new description and old/current description.
 
 # File structure
 The files starting with capital letters are modules with various functions.

@@ -155,6 +155,20 @@ def write_to_new_file(rows, output_file_path, mac_file_path_finder, output_file_
                 else:
                     print(f"The MAC address {mac_address} on {entries[0][1]} could not be found. Try other methods to find the vendor.\n")
             
+            elif "eth0" in entries[0][4]:
+                file.write(f"interface {entries[0][1]}\n")
+                file.write(f"description Uplink or P2P \n\n")
+                # Append to csv file
+                new_description = [f"interface {entries[0][1]}", f"description Uplink or P2P", ""]
+                new_descriptions.append(new_description)
+
+            elif len(entries) >= 3:
+                file.write(f"interface {entries[0][1]}\n")
+                file.write(f"description Uplink or P2P \n\n")
+                # Append to csv file
+                new_description = [f"interface {entries[0][1]}", f"description Uplink or P2P", ""]
+                new_descriptions.append(new_description)
+
             elif len(entries) == 1 and "B,R" or "B" in entries[0][3]:
                 if Tengig_start: file.write("\n"); new_descriptions.append(["","",""]); Tengig_start = False
                 # Remove all chars after dot
